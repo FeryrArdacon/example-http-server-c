@@ -103,6 +103,12 @@ void start_server()
   printf("Server started.\n");
 }
 
+int send_response(int client_connection, const char *response_data)
+{
+  const int NO_OPTIONS = 0;
+  return send(client_connection, response_data, strlen(response_data), NO_OPTIONS);
+}
+
 void handle_requests()
 {
   const int NO_OPTIONS = 0;
@@ -140,11 +146,14 @@ void handle_requests()
     if (strcmp(file_path, STOP_COMMAND) == 0)
     {
       // send the header to the client
-      sprintf(header, "HTTP/1.1 200 OK\r\nContent-Length: %d\r\n\r\n", sizeof(STOP_MESSAGE));
-      send(g_client_connection, header, sizeof(header), NO_OPTIONS);
+      sprintf(header, "HTTP/1.1 200 OK\r\nContent-Length: %d\r\n\r\n", (int)strlen(STOP_MESSAGE));
+      if (send_response(g_client_connection, header) == -1)
+        printf("Error sending response header to client\n");
 
       // send the stop message to the client
-      send(g_client_connection, STOP_MESSAGE, sizeof(STOP_MESSAGE), NO_OPTIONS);
+      if (send_response(g_client_connection, STOP_MESSAGE) == -1)
+        printf("Error sending response stop message to client\n");
+
       close(g_client_connection);
       printf("Stop receiving ...\n");
       break;
@@ -156,10 +165,12 @@ void handle_requests()
 
     // send the header to the client
     sprintf(header, "HTTP/1.1 200 OK\r\nContent-Length: %d\r\n\r\n", requested_file_size);
-    send(g_client_connection, header, sizeof(header), NO_OPTIONS);
+    if (send_response(g_client_connection, header) == -1)
+      printf("Error sending response header to client\n");
 
     // send the file to the client
-    sendfile(g_client_connection, requested_file_fd, 0, requested_file_size);
+    if (sendfile(g_client_connection, requested_file_fd, 0, requested_file_size) == -1)
+      printf("Error sending response fileq to client\n");
 
     // close the file client connection
     close(requested_file_fd);
