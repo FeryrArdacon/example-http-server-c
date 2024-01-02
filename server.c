@@ -33,7 +33,7 @@ void sig_handler(int signo)
 void hanlde_interrupt()
 {
   if (signal(SIGINT, sig_handler) == SIG_ERR)
-    printf("\ncan't catch SIGINT\n");
+    fprintf(stderr, "\ncan't catch SIGINT\n");
 }
 
 struct sockaddr_in get_server_config(int port)
@@ -52,7 +52,7 @@ int get_file_size(char *file_path)
   // check if file exists
   if (file == NULL)
   {
-    printf("Error opening file: %s\n", file_path);
+    fprintf(stderr, "Error opening file: %s\n", file_path);
     return -1;
   }
 
@@ -74,7 +74,7 @@ void start_server()
   // initialize server on port 8080
   if ((g_server = socket(AF_INET, SOCK_STREAM, AUTO_CHOOSE_PROTOCOL)) == -1)
   {
-    printf("Error creating socket\n");
+    fprintf(stderr, "Error creating socket\n");
     exit(1);
   }
 
@@ -82,7 +82,7 @@ void start_server()
   if (setsockopt(g_server, SOL_SOCKET, SO_REUSEADDR, (void *)&optVal, optLen) == -1)
   {
     close(g_server);
-    printf("Error setting socket options\n");
+    fprintf(stderr, "Error setting socket options\n");
     exit(1);
   }
 
@@ -94,8 +94,8 @@ void start_server()
   {
     close(g_server);
     if (errno == EADDRINUSE)
-      printf("Port is already in use\n");
-    printf("Error binding to port\n");
+      fprintf(stderr, "Port is already in use\n");
+    fprintf(stderr, "Error binding to port\n");
     exit(1);
   }
 
@@ -103,7 +103,7 @@ void start_server()
   if (listen(g_server, MAX_CONNECTIONS) == -1)
   {
     close(g_server);
-    printf("Error listening to port\n");
+    fprintf(stderr, "Error listening to port\n");
     exit(1);
   }
 
@@ -126,10 +126,10 @@ void get_status_code_text(int status_code, char *status_code_text)
   }
 }
 
-void set_header(char *header, int status_code, int content_length)
+void set_header(char *header, int status_code, size_t content_length)
 {
   char status_code_text[32] = {0};
-  char *header_template = "HTTP/1.1 %d %s\r\nContent-Length: %d\r\n\r\n";
+  char *header_template = "HTTP/1.1 %d %s\r\nContent-Length: %ld\r\n\r\n";
   get_status_code_text(status_code, status_code_text);
   sprintf(header, header_template, status_code, status_code_text, content_length);
 }
@@ -162,7 +162,7 @@ void handle_requests()
     // accept client connection
     if ((g_client_connection = accept(g_server, 0, 0)) == -1)
     {
-      printf("Error accepting client\n");
+      fprintf(stderr, "Error accepting client\n");
       return;
     }
 
@@ -171,7 +171,7 @@ void handle_requests()
     if (recv(g_client_connection, request_data, sizeof(request_data), NO_OPTIONS) == -1)
     {
       close(g_client_connection);
-      printf("Error reading from client\n");
+      fprintf(stderr, "Error reading from client\n");
       return;
     }
 
@@ -190,7 +190,7 @@ void handle_requests()
       // send the stop message to the client
       set_header(header, 200, strlen(STOP_MESSAGE));
       if (send_response(g_client_connection, STOP_MESSAGE, header) == -1)
-        printf("Error sending response stop message to client\n");
+        fprintf(stderr, "Error sending response stop message to client\n");
 
       close(g_client_connection);
       printf("Stop receiving ...\n");
@@ -208,7 +208,7 @@ void handle_requests()
       // send the stop message to the client
       set_header(header, 404, strlen(NOT_FOUND_404));
       if (send_response(g_client_connection, NOT_FOUND_404, header) == -1)
-        printf("Error sending response not found 404 message to client\n");
+        fprintf(stderr, "Error sending response not found 404 message to client\n");
 
       close(g_client_connection);
       continue;
@@ -217,11 +217,11 @@ void handle_requests()
     // send the header to the client
     set_header(header, 200, requested_file_size);
     if (send_response(g_client_connection, "", header) == -1)
-      printf("Error sending response header to client\n");
+      fprintf(stderr, "Error sending response header to client\n");
 
     // send the file to the client
     if (sendfile(g_client_connection, requested_file_fd, 0, requested_file_size) == -1)
-      printf("Error sending response fileq to client\n");
+      fprintf(stderr, "Error sending response fileq to client\n");
 
     // close the file client connection
     close(requested_file_fd);
