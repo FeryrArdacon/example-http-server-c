@@ -112,7 +112,6 @@ void start_server()
 
 void get_status_code_text(int status_code, char *status_code_text)
 {
-  printf("get_status_code_text\n");
   switch (status_code)
   {
   case 200:
@@ -129,7 +128,6 @@ void get_status_code_text(int status_code, char *status_code_text)
 
 void set_header(char *header, int status_code, int content_length)
 {
-  printf("set_header\n");
   char status_code_text[32] = {0};
   char *header_template = "HTTP/1.1 %d %s\r\nContent-Length: %d\r\n\r\n";
   get_status_code_text(status_code, status_code_text);
@@ -138,7 +136,6 @@ void set_header(char *header, int status_code, int content_length)
 
 int send_response(int client_connection, const char *response_data, const char *header_data)
 {
-  printf("send_response\n");
   const int NO_OPTIONS = 0;
   int rt = 0;
 
