@@ -108,13 +108,9 @@ void handle_requests()
   const int NO_OPTIONS = 0;
   const char *STOP_COMMAND = "stop"; // stop server
   const char *STOP_MESSAGE = "Server stopped\n";
-  char request_data[512] = {0};
 
   while (true)
   {
-    // clear the buffer for requests
-    memset(&request_data[0], 0, sizeof(request_data));
-
     // accept client connection
     if ((g_client_connection = accept(g_server, 0, 0)) == -1)
     {
@@ -123,6 +119,7 @@ void handle_requests()
     }
 
     // read the request from the client
+    char request_data[512] = {0};
     if (recv(g_client_connection, request_data, sizeof(request_data), NO_OPTIONS) == -1)
     {
       close(g_client_connection);
@@ -136,9 +133,17 @@ void handle_requests()
     char *file_path = request_data + 5;
     *strchr(file_path, ' ') = 0;
 
+    // define the header
+    char header[512] = {0};
+
     // if the file name is "stop" then stop the server
     if (strcmp(file_path, STOP_COMMAND) == 0)
     {
+      // send the header to the client
+      sprintf(header, "HTTP/1.1 200 OK\r\nContent-Length: %d\r\n\r\n", sizeof(STOP_MESSAGE));
+      send(g_client_connection, header, sizeof(header), NO_OPTIONS);
+
+      // send the stop message to the client
       send(g_client_connection, STOP_MESSAGE, sizeof(STOP_MESSAGE), NO_OPTIONS);
       close(g_client_connection);
       printf("Stop receiving ...\n");
@@ -149,6 +154,11 @@ void handle_requests()
     int requested_file_size = get_file_size(file_path);
     int requested_file_fd = open(file_path, O_RDONLY);
 
+    // send the header to the client
+    sprintf(header, "HTTP/1.1 200 OK\r\nContent-Length: %d\r\n\r\n", requested_file_size);
+    send(g_client_connection, header, sizeof(header), NO_OPTIONS);
+
+    // send the file to the client
     sendfile(g_client_connection, requested_file_fd, 0, requested_file_size);
 
     // close the file client connection
