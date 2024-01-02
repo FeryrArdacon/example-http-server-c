@@ -48,6 +48,14 @@ struct sockaddr_in get_server_config(int port)
 int get_file_size(char *file_path)
 {
   FILE *file = fopen(file_path, "r");
+
+  // check if file exists
+  if (file == NULL)
+  {
+    printf("Error opening file: %s\n", file_path);
+    return -1;
+  }
+
   fseek(file, 0, SEEK_END);
   int size = ftell(file);
   fclose(file);
@@ -113,6 +121,7 @@ void handle_requests()
   const int NO_OPTIONS = 0;
   const char *STOP_COMMAND = "stop"; // stop server
   const char *STOP_MESSAGE = "Server stopped\n";
+  const char *NOT_FOUND_404 = "Nothing was found for this request\n";
 
   while (true)
   {
@@ -161,6 +170,23 @@ void handle_requests()
     // open the file and send it to the client
     int requested_file_size = get_file_size(file_path);
     int requested_file_fd = open(file_path, O_RDONLY);
+
+    if (requested_file_fd == -1)
+    {
+      printf("Error file %s not found - sending 404\n", file_path);
+
+      // send the header to the client
+      sprintf(header, "HTTP/1.1 404 Not Found\r\nContent-Length: %d\r\n\r\n", 0);
+      if (send_response(g_client_connection, header) == -1)
+        printf("Error sending response header to client\n");
+
+      // send the stop message to the client
+      if (send_response(g_client_connection, NOT_FOUND_404) == -1)
+        printf("Error sending response not found 404 message to client\n");
+
+      close(g_client_connection);
+      continue;
+    }
 
     // send the header to the client
     sprintf(header, "HTTP/1.1 200 OK\r\nContent-Length: %d\r\n\r\n", requested_file_size);
