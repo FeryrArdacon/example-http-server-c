@@ -110,9 +110,46 @@ void start_server()
   printf("Server started.\n");
 }
 
-int send_response(int client_connection, const char *response_data)
+void get_status_code_text(int status_code, char *status_code_text)
 {
+  printf("get_status_code_text\n");
+  switch (status_code)
+  {
+  case 200:
+    strcpy(status_code_text, "OK");
+    break;
+  case 404:
+    strcpy(status_code_text, "Not Found");
+    break;
+  default:
+    strcpy(status_code_text, "Unknown");
+    break;
+  }
+}
+
+void set_header(char *header, int status_code, int content_length)
+{
+  printf("set_header\n");
+  char status_code_text[32] = {0};
+  char *header_template = "HTTP/1.1 %d %s\r\nContent-Length: %d\r\n\r\n";
+  get_status_code_text(status_code, status_code_text);
+  sprintf(header, header_template, status_code, status_code_text, content_length);
+}
+
+int send_response(int client_connection, const char *response_data, const char *header_data)
+{
+  printf("send_response\n");
   const int NO_OPTIONS = 0;
+  int rt = 0;
+
+  rt = send(client_connection, header_data, strlen(header_data), NO_OPTIONS);
+
+  if (rt == -1)
+    return -1;
+
+  if (strlen(response_data) == 0)
+    return rt;
+
   return send(client_connection, response_data, strlen(response_data), NO_OPTIONS);
 }
 
@@ -153,13 +190,9 @@ void handle_requests()
     // if the file name is "stop" then stop the server
     if (strcmp(file_path, STOP_COMMAND) == 0)
     {
-      // send the header to the client
-      sprintf(header, "HTTP/1.1 200 OK\r\nContent-Length: %d\r\n\r\n", (int)strlen(STOP_MESSAGE));
-      if (send_response(g_client_connection, header) == -1)
-        printf("Error sending response header to client\n");
-
       // send the stop message to the client
-      if (send_response(g_client_connection, STOP_MESSAGE) == -1)
+      set_header(header, 200, strlen(STOP_MESSAGE));
+      if (send_response(g_client_connection, STOP_MESSAGE, header) == -1)
         printf("Error sending response stop message to client\n");
 
       close(g_client_connection);
@@ -175,13 +208,9 @@ void handle_requests()
     {
       printf("Error file %s not found - sending 404\n", file_path);
 
-      // send the header to the client
-      sprintf(header, "HTTP/1.1 404 Not Found\r\nContent-Length: %d\r\n\r\n", (int)strlen(NOT_FOUND_404));
-      if (send_response(g_client_connection, header) == -1)
-        printf("Error sending response header to client\n");
-
       // send the stop message to the client
-      if (send_response(g_client_connection, NOT_FOUND_404) == -1)
+      set_header(header, 404, strlen(NOT_FOUND_404));
+      if (send_response(g_client_connection, NOT_FOUND_404, header) == -1)
         printf("Error sending response not found 404 message to client\n");
 
       close(g_client_connection);
@@ -189,8 +218,8 @@ void handle_requests()
     }
 
     // send the header to the client
-    sprintf(header, "HTTP/1.1 200 OK\r\nContent-Length: %d\r\n\r\n", requested_file_size);
-    if (send_response(g_client_connection, header) == -1)
+    set_header(header, 200, requested_file_size);
+    if (send_response(g_client_connection, "", header) == -1)
       printf("Error sending response header to client\n");
 
     // send the file to the client
