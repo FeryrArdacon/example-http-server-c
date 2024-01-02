@@ -176,7 +176,7 @@ void handle_requests()
       printf("Error file %s not found - sending 404\n", file_path);
 
       // send the header to the client
-      sprintf(header, "HTTP/1.1 404 Not Found\r\nContent-Length: %d\r\n\r\n", 0);
+      sprintf(header, "HTTP/1.1 404 Not Found\r\nContent-Length: %d\r\n\r\n", (int)strlen(NOT_FOUND_404));
       if (send_response(g_client_connection, header) == -1)
         printf("Error sending response header to client\n");
 
