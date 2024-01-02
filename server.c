@@ -90,7 +90,7 @@ void start_server()
   struct sockaddr_in addr = get_server_config(8080);
 
   // bind the server to the port
-  if (bind(g_server, &addr, sizeof(addr)) == -1)
+  if (bind(g_server, (struct sockaddr *)&addr, sizeof(addr)) == -1)
   {
     close(g_server);
     if (errno == EADDRINUSE)
