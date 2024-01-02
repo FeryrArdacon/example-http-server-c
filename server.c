@@ -50,7 +50,6 @@ int get_file_size(char *file_path)
   FILE *file = fopen(file_path, "r");
   fseek(file, 0, SEEK_END);
   int size = ftell(file);
-  fseek(file, 0, SEEK_SET);
   fclose(file);
   return size;
 }
