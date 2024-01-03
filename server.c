@@ -1,9 +1,7 @@
-#define false 0
-#define true 1
-
 #include <stdlib.h>
 #include <signal.h>
 #include <string.h>
+#include <stdbool.h>
 #include <errno.h>
 
 #include <stdio.h>
